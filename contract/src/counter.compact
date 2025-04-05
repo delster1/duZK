@@ -1,7 +1,2 @@
-export enum STATUS { draft, submitted, approved }
 
-export ledger record_id: Counter;
-export ledger record_status: STATUS;
-export ledger record_data: Opaque<"record">;
-export ledger owner_token: Bytes<32>;
 
