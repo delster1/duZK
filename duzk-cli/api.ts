@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+/*
 import { type ContractAddress, convert_bigint_to_Uint8Array } from '@midnight-ntwrk/compact-runtime';
 import { type Logger } from 'pino';
 import type { RecordDerivedState, RecordContract, RecordProviders, DeployedRecordContract } from './common-types.js';
@@ -20,6 +21,10 @@ import * as utils from './utils/index.js';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, tap, from, type Observable } from 'rxjs';
 import { toHex } from '@midnight-ntwrk/midnight-js-utils';
+*/
+
+
+
 
 /** @internal */
 const recordContractInstance: RecordContract = new Contract(witnesses);
