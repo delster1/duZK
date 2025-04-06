@@ -39,6 +39,7 @@
     "@midnight-ntwrk/wallet-api": "^3.5.0",
     "fp-ts": "^2.16.1",
     "io-ts": "^2.2.20",
+    "pinata": "^2.2.0",
     "pino": "^8.16.0",
     "pino-pretty": "^10.2.3",
     "rxjs": "^7.8.1"
