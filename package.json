@@ -1,9 +1,9 @@
 {
   "packageManager": "yarn@4.1.0",
   "workspaces": [
-		"api",
-		"duzk-cli",
-		"contract"
+    "api",
+    "duzk-cli",
+    "contract"
   ],
   "scripts": {
     "compact": "turbo run compact",

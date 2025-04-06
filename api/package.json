@@ -13,7 +13,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@midnight-ntwrk/bboard-contract": "workspace:*",
+    "@midnight-ntwrk/record-contract": "workspace:*",
     "pino": "^8.16.1",
     "ws": "^8.14.2"
   },
@@ -27,4 +27,3 @@
     "typescript": "^5.2.2"
   }
 }
-
