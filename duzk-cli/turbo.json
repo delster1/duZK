@@ -1,7 +1,7 @@
 {
   "extends": ["//"],
   "$schema": "https://turbo.build/schema.json",
-  "tasks": {
+  "pipeline": {
     "build": {
       "dependsOn": ["compact"],
       "inputs": ["src/**/*.ts", "src/**/*.mts", "src/**/*.tsx", "!src/**/*.test.ts", "tsconfig.json", "tsconfig.build.json"],

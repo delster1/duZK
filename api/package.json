@@ -9,11 +9,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.json",
     "lint": "eslint src"
   },
   "dependencies": {
-    "@midnight-ntwrk/bboard-contract": "workspace:*",
+    "@midnight-ntwrk/record-contract": "workspace:*",
     "pino": "^8.16.1",
     "ws": "^8.14.2"
   },
@@ -27,4 +27,3 @@
     "typescript": "^5.2.2"
   }
 }
-

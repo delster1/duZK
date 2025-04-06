@@ -15,7 +15,7 @@ import {
 	pureCircuits,
 	witnesses,
 	STATE,
-} from '@midnight-ntwrk/bboard-contract';
+} from '@midnight-ntwrk/record-contract';
 import * as utils from './utils/index.js';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, tap, from, type Observable } from 'rxjs';
@@ -31,8 +31,9 @@ export interface DeployedRecordAPI {
 	readonly deployedContractAddress: ContractAddress;
 	readonly state$: Observable<RecordDerivedState>;
 
-	post: (message: string) => Promise<void>;
-	takeDown: () => Promise<void>;
+	add_patient_and_record: (new_record_hash : Uint8Array) => Promise<void>;
+	update_record: (new_record_hash : Uint8Array) => Promise<void>;
+	delete_record: () => Promise<void>;
 }
 
 /**
@@ -70,8 +71,8 @@ export class RecordAPI implements DeployedRecordAPI {
 							ledgerStateChanged: {
 								ledgerState: {
 									...ledgerState,
-									state: ledgerState.state === STATE.occupied ? 'occupied' : 'vacant',
-									poster: toHex(ledgerState.poster),
+									state: ledgerState.state === STATE.filed ? 'occupied' : 'vacant',
+									patient_id: toHex(ledgerState.patientId),
 								},
 							},
 						}),
@@ -81,20 +82,20 @@ export class RecordAPI implements DeployedRecordAPI {
 				//    since the private state of the bulletin board application never changes, we can query the
 				//    private state once and always use the same value with `combineLatest`. In applications
 				//    where the private state is expected to change, we would need to make this an `Observable`.
-				from(providers.privateStateProvider.get('recordPrivateState') as Promise<RecordPrivateState>),
+				from(providers.privateStateProvider.get('RecordPrivateState') as Promise<RecordPrivateState>),
 			],
 			// ...and combine them to produce the required derived state.
 			(ledgerState, privateState) => {
 				const hashedSecretKey = pureCircuits.public_key(
-					privateState.secretKey,
-					convert_bigint_to_Uint8Array(32, ledgerState.instance),
+					privateState.patientKey,
+					ledgerState.recordHash
 				);
 
 				return {
 					state: ledgerState.state,
-					message: ledgerState.message.value,
-					instance: ledgerState.instance,
-					isOwner: toHex(ledgerState.poster) === toHex(hashedSecretKey),
+					record_hash: ledgerState.recordHash,
+					isOwner: toHex(ledgerState.patientId) === toHex(hashedSecretKey),
+					patient_id : ledgerState.patientId
 				};
 			},
 		);
@@ -136,13 +137,13 @@ export class RecordAPI implements DeployedRecordAPI {
 		});
 	}
 
-	async add_patient_and_record(new_record_hash: Uint8Array, patient_id: Uint8Array): Promise<void> {
+	async add_patient_and_record(new_record_hash: Uint8Array): Promise<void> {
 		this.logger?.info(`updating record: ${new_record_hash}`);
 
 		const txData =
 			// EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
 			await this.deployedContract.callTx // EXERCISE ANSWER
-				.add_patient_and_record(new_record_hash, patient_id); // EXERCISE ANSWER
+				.add_patient_and_record(new_record_hash); // EXERCISE ANSWER
 
 		this.logger?.trace({
 			transactionAdded: {
@@ -192,7 +193,7 @@ export class RecordAPI implements DeployedRecordAPI {
 		// EXERCISE 5: FILL IN THE CORRECT ARGUMENTS TO deployContract
 		const deployedRecordContract = await deployContract(providers, {
 			// EXERCISE ANSWER
-			privateStateKey: 'recordPrivateState', // EXERCISE ANSWER
+			privateStateKey: 'RecordPrivateState', // EXERCISE ANSWER
 			contract: recordContractInstance,
 			initialPrivateState: await RecordAPI.getPrivateState(providers), // EXERCISE ANSWER
 		});
@@ -225,7 +226,7 @@ export class RecordAPI implements DeployedRecordAPI {
 		const deployedRecordContract = await findDeployedContract(providers, {
 			contractAddress,
 			contract: recordContractInstance,
-			privateStateKey: 'recordPrivateState',
+			privateStateKey: 'RecordPrivateState',
 			initialPrivateState: await RecordAPI.getPrivateState(providers),
 		});
 
@@ -239,7 +240,7 @@ export class RecordAPI implements DeployedRecordAPI {
 	}
 
 	private static async getPrivateState(providers: RecordProviders): Promise<RecordPrivateState> {
-		const existingPrivateState = await providers.privateStateProvider.get('recordPrivateState');
+		const existingPrivateState = await providers.privateStateProvider.get('RecordPrivateState');
 		return existingPrivateState ?? createRecordPrivateState(utils.randomBytes(32));
 	}
 }

@@ -6,7 +6,7 @@
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
 import { type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
-import type { STATE, RecordPrivateState , Contract, Witnesses } from '@midnight-ntwrk/bboard-contract';
+import type { STATE, RecordPrivateState , Contract, Witnesses } from '@midnight-ntwrk/record-contract';
 
 /**
  * The private states consumed throughout the application.

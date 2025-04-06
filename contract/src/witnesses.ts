@@ -1,4 +1,4 @@
-import { Ledger } from './managed/duZK/contract/index.cjs'
+import { Ledger } from './managed/record/contract/index.cjs'
 import { WitnessContext } from '@midnight-ntwrk/compact-runtime';
 
 export type RecordPrivateState = {
@@ -12,6 +12,6 @@ export const createRecordPrivateState = (patientKey : Uint8Array) => ({
 export const witnesses = {
   patient_secret_key: ({ privateState }: WitnessContext<Ledger, RecordPrivateState>): [RecordPrivateState, Uint8Array] => [
     privateState,
-    privateState.secretKey,
+    privateState.patientKey,
   ],
 };

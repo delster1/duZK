@@ -117,10 +117,8 @@ const displayLedgerState = async (
     logger.info(`There is no hospital record board contract deployed at ${contractAddress}`);
   } else {
     const recordState = ledgerState.state === STATE.filed ? 'filed' : 'not filed';
-    const latestRecord = !ledgerState.re.is_some ? 'none' : ledgerState.message.value;
     logger.info(`Current state is: '${recordState}'`);
-    logger.info(`Current message is: '${latestRecord}'`);
-    logger.info(`Current patient is: '${toHex(ledgerState.patient_id)}'`);
+    logger.info(`Current patient is: '${toHex(ledgerState.patientId)}'`);
   }
 };
 
@@ -129,11 +127,11 @@ const displayLedgerState = async (
  */
 
 const displayPrivateState = async (providers: RecordProviders, logger: Logger): Promise<void> => {
-  const privateState = await providers.privateStateProvider.get('recordPrivateState');
+  const privateState = await providers.privateStateProvider.get('RecordPrivateState');
   if (privateState === null) {
     logger.info(`There is no existing record private state`);
   } else {
-    logger.info(`Current secret key is: ${toHex(privateState.secretKey)}`);
+    logger.info(`Current secret key is: ${toHex(privateState.patientKey)}`);
   }
 };
 
@@ -149,7 +147,7 @@ const displayDerivedState = (ledgerState: RecordDerivedState | undefined, logger
     logger.info(`No record state currently available`);
   } else {
     const boardState = ledgerState.state === STATE.filed ? 'filed' : 'not filed';
-    const latestMessage = ledgerState.state === STATE.filed ? ledgerState.record : 'none';
+    const latestMessage = ledgerState.state === STATE.filed ? ledgerState.record_hash : 'none';
     logger.info(`Current state is: '${boardState}'`);
     logger.info(`Current record is: '${latestMessage}'`);
     logger.info(`Current patient is: ${ledgerState.patient_id}`);
@@ -187,12 +185,12 @@ const mainLoop = async (providers: RecordProviders, rli: Interface, logger: Logg
         case '1': {
           const record = await rli.question(`What record do you want to post? `);
 		  const patient_id = await rli.question(`What is the patient id associeted with the patient you'd like to add?`)
-          await recordApi.add_patient_and_record(record as Uint8Array, patient_id as Uint8Array);
+          await recordApi.add_patient_and_record(record as unknown as Uint8Array);
           break;
         }
         case '2':
 			const record = await rli.question(`What is the new record you'd like to upload?`)
-          await recordApi.update_record(record as Uint8Array);
+          await recordApi.update_record(record as unknown as Uint8Array);
           break;
         case '3':
 			 await recordApi.delete_record();
@@ -389,7 +387,7 @@ export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComp
           privateStateStoreName: config.privateStateStoreName,
         }),
         publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
-        zkConfigProvider: new NodeZkConfigProvider<'post' | 'take_down'>(config.zkConfigPath),
+        zkConfigProvider: new NodeZkConfigProvider<'add_patient_and_record' | 'update_record' | 'delete_record'>(config.zkConfigPath),
         proofProvider: httpClientProofProvider(config.proofServer),
         walletProvider: walletAndMidnightProvider,
         midnightProvider: walletAndMidnightProvider,
