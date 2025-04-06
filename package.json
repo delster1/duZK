@@ -1,6 +1,7 @@
 {
   "packageManager": "yarn@4.1.0",
   "workspaces": [
+		"compact",
 		"api",
 		"duzk-cli",
 		"contract"
