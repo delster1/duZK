@@ -25,8 +25,8 @@ export circuit add_patient_and_record(new_record_hash: Bytes<32>): [] {
 export circuit update_record(new_record_hash: Bytes<32>): [] {
     assert state == STATE.filed
         "Attempted to add record to an non-existing record, use add_record instead";
-	assert patient_id == public_key(patient_secret_key(), new_record_hash)
-    "Attempted to take down post, but not the current patient id";
+	assert patient_id == public_key(patient_secret_key(), record_hash)
+		"Attempted to take down post, but not the right patient record";
 
     record_hash = new_record_hash;
 }
