@@ -1,6 +1,0 @@
-#!/bin/bash
-thisdir="$(cd $(dirname $0) ; pwd -P)"
-PATH="$thisdir:$PATH"
-export COMPACT_PATH="$thisdir/lib/"
-export ZKIR_PP="$thisdir"
-exec "$thisdir/compactc.bin" $@
