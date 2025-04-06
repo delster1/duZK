@@ -11,7 +11,7 @@
     "testnet-local": "node --experimental-specifier-resolution=node dist/launcher/testnet-local.js",
     "standalone": "docker compose -f standalone.yml pull && node --experimental-specifier-resolution=node dist/launcher/standalone.js",
     "prepack": "yarn build",
-    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.json",
     "lint": "eslint src"
   },
   "dependencies": {
@@ -32,4 +32,3 @@
     "typescript": "^5.2.2"
   }
 }
-
