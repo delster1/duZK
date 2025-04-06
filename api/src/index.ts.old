@@ -15,25 +15,11 @@ import {
 	pureCircuits,
 	witnesses,
 	STATE,
-} from '@midnight-ntwrk/record-contract';
+} from '@midnight-ntwrk/bboard-contract';
 import * as utils from './utils/index.js';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, tap, from, type Observable } from 'rxjs';
 import { toHex } from '@midnight-ntwrk/midnight-js-utils';
-
-
-import { readFileSync } from 'fs';
-import { Blob } from 'buffer';
-import { PinataSDK } from '@pinata/sdk';
-import { process } from "node:process";
-
-import { dotenv } from 'dotenv'
-dotenv.config();
-
-const pinata = new PinataSDK({
-  pinataJwt: process.env.PINATA_JWT,
-  pinataGateway: process.env.GATEWAY_URL
-})
 
 /** @internal */
 const recordContractInstance: RecordContract = new Contract(witnesses);
@@ -84,7 +70,7 @@ export class RecordAPI implements DeployedRecordAPI {
 							ledgerStateChanged: {
 								ledgerState: {
 									...ledgerState,
-									state: ledgerState.state === STATE.filed? 'filed' : 'empty',
+									state: ledgerState.state === STATE.occupied ? 'occupied' : 'vacant',
 									poster: toHex(ledgerState.poster),
 								},
 							},
@@ -133,56 +119,38 @@ export class RecordAPI implements DeployedRecordAPI {
 	 * @remarks
 	 * This method can fail during local circuit execution if the bulletin board is currently occupied.
 	 */
-	async update_record(file_path: string): Promise<void> {
-		this.logger?.info(`updating record for file: ${file_path}`);
+	async update_record(new_record_hash: Uint8Array): Promise<void> {
+		this.logger?.info(`updating record: ${new_record_hash}`);
 
-        try {
-            const blob = new Blob([readFileSync(file_path)]);
-            const new_record_hash = await pinata.upload.private.file(blob);
+		const txData =
+			// EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
+			await this.deployedContract.callTx // EXERCISE ANSWER
+				.update_record(new_record_hash); // EXERCISE ANSWER
 
-            this.logger?.info(`uploading hash: ${new_record_hash}`);
-
-            const txData =
-                // EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-                await this.deployedContract.callTx // EXERCISE ANSWER
-                    .update_record(new_record_hash); // EXERCISE ANSWER
-
-            this.logger?.trace({
-                transactionAdded: {
-                    circuit: 'update_record',
-                    txHash: txData.public.txHash,
-                    blockHeight: txData.public.blockHeight,
-                },
-            });
-        } catch (error) {
-            this.logger?.error(`error uploading file: ${error}`);
-            return;
-        }
+		this.logger?.trace({
+			transactionAdded: {
+				circuit: 'update_record',
+				txHash: txData.public.txHash,
+				blockHeight: txData.public.blockHeight,
+			},
+		});
 	}
 
-	async add_patient_and_record(file_path: string): Promise<void> {
-		this.logger?.info(`adding record for file: ${file_path}`);
+	async add_patient_and_record(new_record_hash: Uint8Array, patient_id: Uint8Array): Promise<void> {
+		this.logger?.info(`updating record: ${new_record_hash}`);
 
-        try {
-            const blob = new Blob([readFileSync(file_path)]);
-            const new_record_hash = await pinata.upload.private.file(blob);
-            this.logger?.info(`uploading hash: ${new_record_hash}`);
+		const txData =
+			// EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
+			await this.deployedContract.callTx // EXERCISE ANSWER
+				.add_patient_and_record(new_record_hash, patient_id); // EXERCISE ANSWER
 
-            const txData =
-                // EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-                await this.deployedContract.callTx
-                    .add_patient_and_record(new_record_hash);
-
-            this.logger?.trace({
-                transactionAdded: {
-                    circuit: 'add_patient_and_record',
-                    txHash: txData.public.txHash,
-                    blockHeight: txData.public.blockHeight,
-                },
-            });
-        } catch (error) {
-            this.logger?.error(`error uploading file: ${error}`);
-        }
+		this.logger?.trace({
+			transactionAdded: {
+				circuit: 'add_patient_and_record',
+				txHash: txData.public.txHash,
+				blockHeight: txData.public.blockHeight,
+			},
+		});
 	}
 
 	/**
@@ -194,12 +162,12 @@ export class RecordAPI implements DeployedRecordAPI {
 	 * state.
 	 */
 	async delete_record(): Promise<void> {
-		this.logger?.info('deleting record');
+		this.logger?.info('takingDownMessage');
 
 		const txData =
 			// EXERCISE 4: CALL THE take_down CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-			await this.deployedContract.callTx
-				.delete_record();
+			await this.deployedContract.callTx // EXERCISE ANSWER
+				.delete_record(); // EXERCISE ANSWER
 
 		this.logger?.trace({
 			transactionAdded: {
@@ -272,7 +240,7 @@ export class RecordAPI implements DeployedRecordAPI {
 
 	private static async getPrivateState(providers: RecordProviders): Promise<RecordPrivateState> {
 		const existingPrivateState = await providers.privateStateProvider.get('recordPrivateState');
-		return existingPrivateState ?? createRecordPrivateState(randomBytes(32));
+		return existingPrivateState ?? createRecordPrivateState(utils.randomBytes(32));
 	}
 }
 
@@ -281,6 +249,7 @@ export class RecordAPI implements DeployedRecordAPI {
  *
  * @public
  */
+export * as utils from './utils/index.js';
 
 export * from './common-types.js';
 
