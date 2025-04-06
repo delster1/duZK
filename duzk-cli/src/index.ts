@@ -6,41 +6,52 @@
  * of the servers this file relies on.
  */
 
-import { createInterface, type Interface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
-import { WebSocket } from 'ws';
-import { webcrypto } from 'crypto';
+import { createInterface, type Interface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { WebSocket } from "ws";
+import { webcrypto } from "crypto";
 import {
-  type RecordProviders,
-  type PrivateStates,
-  RecordAPI,
-  utils,
-  type RecordDerivedState,
-  type DeployedRecordContract,
-} from '@midnight-ntwrk/record-api';
-import { ledger, type Ledger, STATE } from '@midnight-ntwrk/record-contract';
+	type RecordProviders,
+	type PrivateStates,
+	RecordAPI,
+	utils,
+	type RecordDerivedState,
+	type DeployedRecordContract,
+} from "@midnight-ntwrk/record-api";
+import { ledger, type Ledger, STATE } from "@midnight-ntwrk/record-contract";
 import {
-  type BalancedTransaction,
-  createBalancedTx,
-  type MidnightProvider,
-  type UnbalancedTransaction,
-  type WalletProvider,
-} from '@midnight-ntwrk/midnight-js-types';
-import { type Wallet } from '@midnight-ntwrk/wallet-api';
-import * as Rx from 'rxjs';
-import { type CoinInfo, nativeToken, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
-import { Transaction as ZswapTransaction } from '@midnight-ntwrk/zswap';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { type Resource, WalletBuilder } from '@midnight-ntwrk/wallet';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { type Logger } from 'pino';
-import { type Config, StandaloneConfig } from './config.js';
-import type { StartedDockerComposeEnvironment, DockerComposeEnvironment } from 'testcontainers';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
-import { toHex } from '@midnight-ntwrk/midnight-js-utils';
-import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+	type BalancedTransaction,
+	createBalancedTx,
+	type MidnightProvider,
+	type UnbalancedTransaction,
+	type WalletProvider,
+} from "@midnight-ntwrk/midnight-js-types";
+import { type Wallet } from "@midnight-ntwrk/wallet-api";
+import * as Rx from "rxjs";
+import {
+	type CoinInfo,
+	nativeToken,
+	Transaction,
+	type TransactionId,
+} from "@midnight-ntwrk/ledger";
+import { Transaction as ZswapTransaction } from "@midnight-ntwrk/zswap";
+import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
+import { type Resource, WalletBuilder } from "@midnight-ntwrk/wallet";
+import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
+import { type Logger } from "pino";
+import { type Config, StandaloneConfig } from "./config.js";
+import type {
+	StartedDockerComposeEnvironment,
+	DockerComposeEnvironment,
+} from "testcontainers";
+import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
+import { type ContractAddress } from "@midnight-ntwrk/compact-runtime";
+import { toHex } from "@midnight-ntwrk/midnight-js-utils";
+import {
+	getLedgerNetworkId,
+	getZswapNetworkId,
+} from "@midnight-ntwrk/midnight-js-network-id";
 
 // @ts-expect-error: It's needed to make Scala.js and WASM code able to use cryptography
 globalThis.crypto = webcrypto;
@@ -58,12 +69,14 @@ globalThis.WebSocket = WebSocket;
  */
 
 export const getRecordLedgerState = (
-  providers: RecordProviders,
-  contractAddress: ContractAddress,
+	providers: RecordProviders,
+	contractAddress: ContractAddress,
 ): Promise<Ledger | null> =>
-  providers.publicDataProvider
-    .queryContractState(contractAddress)
-    .then((contractState) => (contractState != null ? ledger(contractState.data) : null));
+	providers.publicDataProvider
+		.queryContractState(contractAddress)
+		.then((contractState) =>
+			contractState != null ? ledger(contractState.data) : null,
+		);
 
 /* **********************************************************************
  * deployOrJoin: returns a contract, by prompting the user about
@@ -73,32 +86,44 @@ export const getRecordLedgerState = (
 
 const DEPLOY_OR_JOIN_QUESTION = `
 You can do one of the following:
-  1. Deploy a new bulletin board contract
-  2. Join an existing bulletin board contract
+  1. Create a new hospital record 
+  2. Update an existing hospital record
   3. Exit
 Which would you like to do? `;
 
-const deployOrJoin = async (providers: RecordProviders, rli: Interface, logger: Logger): Promise<RecordAPI | null> => {
-  let api: RecordAPI | null = null;
+const deployOrJoin = async (
+	providers: RecordProviders,
+	rli: Interface,
+	logger: Logger,
+): Promise<RecordAPI | null> => {
+	let api: RecordAPI | null = null;
 
-  while (true) {
-    const choice = await rli.question(DEPLOY_OR_JOIN_QUESTION);
-    switch (choice) {
-      case '1':
-        api = await RecordAPI.deploy(providers, logger);
-        logger.info(`Deployed contract at address: ${api.deployedContractAddress}`);
-        return api;
-      case '2':
-        api = await RecordAPI.join(providers, await rli.question('What is the contract address (in hex)? '), logger);
-        logger.info(`Joined contract at address: ${api.deployedContractAddress}`);
-        return api;
-      case '3':
-        logger.info('Exiting...');
-        return null;
-      default:
-        logger.error(`Invalid choice: ${choice}`);
-    }
-  }
+	while (true) {
+		const choice = await rli.question(DEPLOY_OR_JOIN_QUESTION);
+		switch (choice) {
+			case "1":
+				api = await RecordAPI.deploy(providers, logger);
+				logger.info(
+					`Deployed contract at address: ${api.deployedContractAddress}`,
+				);
+				return api;
+			case "2":
+				api = await RecordAPI.join(
+					providers,
+					await rli.question("What is the contract address (in hex)? "),
+					logger,
+				);
+				logger.info(
+					`Joined contract at address: ${api.deployedContractAddress}`,
+				);
+				return api;
+			case "3":
+				logger.info("Exiting...");
+				return null;
+			default:
+				logger.error(`Invalid choice: ${choice}`);
+		}
+	}
 };
 
 /* **********************************************************************
@@ -107,32 +132,40 @@ const deployOrJoin = async (providers: RecordProviders, rli: Interface, logger: 
  */
 
 const displayLedgerState = async (
-  providers: RecordProviders,
-  deployedRecordContract: DeployedRecordContract,
-  logger: Logger,
+	providers: RecordProviders,
+	deployedRecordContract: DeployedRecordContract,
+	logger: Logger,
 ): Promise<void> => {
-  const contractAddress = deployedRecordContract.deployTxData.public.contractAddress;
-  const ledgerState = await getRecordLedgerState(providers, contractAddress);
-  if (ledgerState === null) {
-    logger.info(`There is no hospital record board contract deployed at ${contractAddress}`);
-  } else {
-    const recordState = ledgerState.state === STATE.filed ? 'filed' : 'not filed';
-    logger.info(`Current state is: '${recordState}'`);
-    logger.info(`Current patient is: '${toHex(ledgerState.patientId)}'`);
-  }
+	const contractAddress =
+		deployedRecordContract.deployTxData.public.contractAddress;
+	const ledgerState = await getRecordLedgerState(providers, contractAddress);
+	if (ledgerState === null) {
+		logger.info(
+			`There is no hospital record board contract deployed at ${contractAddress}`,
+		);
+	} else {
+		const recordState =
+			ledgerState.state === STATE.filed ? "filed" : "not filed";
+		logger.info(`Current state is: '${recordState}'`);
+		logger.info(`Current patient is: '${toHex(ledgerState.patientId)}'`);
+	}
 };
 
 /* **********************************************************************
  * displayPrivateState: shows the hex-formatted value of the secret key.
  */
 
-const displayPrivateState = async (providers: RecordProviders, logger: Logger): Promise<void> => {
-  const privateState = await providers.privateStateProvider.get('RecordPrivateState');
-  if (privateState === null) {
-    logger.info(`There is no existing record private state`);
-  } else {
-    logger.info(`Current secret key is: ${toHex(privateState.patientKey)}`);
-  }
+const displayPrivateState = async (
+	providers: RecordProviders,
+	logger: Logger,
+): Promise<void> => {
+	const privateState =
+		await providers.privateStateProvider.get("RecordPrivateState");
+	if (privateState === null) {
+		logger.info(`There is no existing record private state`);
+	} else {
+		logger.info(`Current secret key is: ${toHex(privateState.patientKey)}`);
+	}
 };
 
 /* **********************************************************************
@@ -142,16 +175,21 @@ const displayPrivateState = async (providers: RecordProviders, logger: Logger): 
  * determine if the current user is the poster of the current message.
  */
 
-const displayDerivedState = (ledgerState: RecordDerivedState | undefined, logger: Logger) => {
-  if (ledgerState === undefined) {
-    logger.info(`No record state currently available`);
-  } else {
-    const boardState = ledgerState.state === STATE.filed ? 'filed' : 'not filed';
-    const latestMessage = ledgerState.state === STATE.filed ? ledgerState.record_hash : 'none';
-    logger.info(`Current state is: '${boardState}'`);
-    logger.info(`Current record is: '${latestMessage}'`);
-    logger.info(`Current patient is: ${ledgerState.patient_id}`);
-  }
+const displayDerivedState = (
+	ledgerState: RecordDerivedState | undefined,
+	logger: Logger,
+) => {
+	if (ledgerState === undefined) {
+		logger.info(`No record state currently available`);
+	} else {
+		const boardState =
+			ledgerState.state === STATE.filed ? "filed" : "not filed";
+		const latestMessage =
+			ledgerState.state === STATE.filed ? ledgerState.record_hash : "none";
+		logger.info(`Current state is: '${boardState}'`);
+		logger.info(`Current record is: '${latestMessage}'`);
+		logger.info(`Current patient is: ${ledgerState.patient_id}`);
+	}
 };
 
 /* **********************************************************************
@@ -168,46 +206,59 @@ You can do one of the following:
   4. Exit
 Which would you like to do? `;
 
-const mainLoop = async (providers: RecordProviders, rli: Interface, logger: Logger): Promise<void> => {
-  const recordApi = await deployOrJoin(providers, rli, logger);
-  if (recordApi === null) {
-    return;
-  }
-  let currentState: RecordDerivedState | undefined;
-  const stateObserver = {
-    next: (state: RecordDerivedState) => (currentState = state),
-  };
-  const subscription = recordApi.state$.subscribe(stateObserver);
-  try {
-    while (true) {
-      const choice = await rli.question(MAIN_LOOP_QUESTION);
-      switch (choice) {
-        case '1': {
-          const record = await rli.question(`What record do you want to post? `);
-		  const patient_id = await rli.question(`What is the patient id associeted with the patient you'd like to add?`)
-          await recordApi.add_patient_and_record(record as unknown as Uint8Array);
-          break;
-        }
-        case '2':
-			const record = await rli.question(`What is the new record you'd like to upload?`)
-          await recordApi.update_record(record as unknown as Uint8Array);
-          break;
-        case '3':
-			 await recordApi.delete_record();
-          await displayLedgerState(providers, recordApi.deployedContract, logger);
-          break;
-        case '4':
-          logger.info('Exiting...');
-          return;
-        default:
-          logger.error(`Invalid choice: ${choice}`);
-      }
-    }
-  } finally {
-    // While we allow errors to bubble up to the 'run' function, we will always need to dispose of the state
-    // subscription when we exit.
-    subscription.unsubscribe();
-  }
+const mainLoop = async (
+	providers: RecordProviders,
+	rli: Interface,
+	logger: Logger,
+): Promise<void> => {
+	const recordApi = await deployOrJoin(providers, rli, logger);
+	if (recordApi === null) {
+		return;
+	}
+	let currentState: RecordDerivedState | undefined;
+	const stateObserver = {
+		next: (state: RecordDerivedState) => (currentState = state),
+	};
+	const subscription = recordApi.state$.subscribe(stateObserver);
+	try {
+		while (true) {
+			const choice = await rli.question(MAIN_LOOP_QUESTION);
+			switch (choice) {
+				case "1": {
+					const record = await rli.question(
+						`What record do you want to upload? `,
+					);
+					await recordApi.add_patient_and_record(
+						record as unknown as Uint8Array,
+					);
+					break;
+				}
+				case "2":
+					const record = await rli.question(
+						`What is the new record you'd like to upload?`,
+					);
+					await recordApi.update_record(record as unknown as Uint8Array);
+					break;
+				case "3":
+					await recordApi.delete_record();
+					await displayLedgerState(
+						providers,
+						recordApi.deployedContract,
+						logger,
+					);
+					break;
+				case "4":
+					logger.info("Exiting...");
+					return;
+				default:
+					logger.error(`Invalid choice: ${choice}`);
+			}
+		}
+	} finally {
+		// While we allow errors to bubble up to the 'run' function, we will always need to dispose of the state
+		// subscription when we exit.
+		subscription.unsubscribe();
+	}
 };
 
 /* **********************************************************************
@@ -216,24 +267,37 @@ const mainLoop = async (providers: RecordProviders, rli: Interface, logger: Logg
  * interfaces, both implemented in terms of the given wallet.
  */
 
-const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<WalletProvider & MidnightProvider> => {
-  const state = await Rx.firstValueFrom(wallet.state());
-  return {
-    coinPublicKey: state.coinPublicKey,
-    balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
-      return wallet
-        .balanceTransaction(
-          ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()),
-          newCoins,
-        )
-        .then((tx) => wallet.proveTransaction(tx))
-        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
-        .then(createBalancedTx);
-    },
-    submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-      return wallet.submitTransaction(tx);
-    },
-  };
+const createWalletAndMidnightProvider = async (
+	wallet: Wallet,
+): Promise<WalletProvider & MidnightProvider> => {
+	const state = await Rx.firstValueFrom(wallet.state());
+	return {
+		coinPublicKey: state.coinPublicKey,
+		balanceTx(
+			tx: UnbalancedTransaction,
+			newCoins: CoinInfo[],
+		): Promise<BalancedTransaction> {
+			return wallet
+				.balanceTransaction(
+					ZswapTransaction.deserialize(
+						tx.serialize(getLedgerNetworkId()),
+						getZswapNetworkId(),
+					),
+					newCoins,
+				)
+				.then((tx) => wallet.proveTransaction(tx))
+				.then((zswapTx) =>
+					Transaction.deserialize(
+						zswapTx.serialize(getZswapNetworkId()),
+						getLedgerNetworkId(),
+					),
+				)
+				.then(createBalancedTx);
+		},
+		submitTx(tx: BalancedTransaction): Promise<TransactionId> {
+			return wallet.submitTransaction(tx);
+		},
+	};
 };
 
 /* **********************************************************************
@@ -246,24 +310,24 @@ const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<WalletPr
  */
 
 const waitForFunds = (wallet: Wallet, logger: Logger) =>
-  Rx.firstValueFrom(
-    wallet.state().pipe(
-      Rx.throttleTime(10_000),
-      Rx.tap((state) => {
-        const scanned = state.syncProgress?.synced ?? 0n;
-        const total = state.syncProgress?.total.toString() ?? 'unknown number';
-        logger.info(`Wallet processed ${scanned} indices out of ${total}`);
-      }),
-      Rx.filter((state) => {
-        // Let's allow progress only if wallet is close enough
-        const synced = state.syncProgress?.synced ?? 0n;
-        const total = state.syncProgress?.total ?? 1_000n;
-        return total - synced < 100n;
-      }),
-      Rx.map((s) => s.balances[nativeToken()] ?? 0n),
-      Rx.filter((balance) => balance > 0n),
-    ),
-  );
+	Rx.firstValueFrom(
+		wallet.state().pipe(
+			Rx.throttleTime(10_000),
+			Rx.tap((state) => {
+				const scanned = state.syncProgress?.synced ?? 0n;
+				const total = state.syncProgress?.total.toString() ?? "unknown number";
+				logger.info(`Wallet processed ${scanned} indices out of ${total}`);
+			}),
+			Rx.filter((state) => {
+				// Let's allow progress only if wallet is close enough
+				const synced = state.syncProgress?.synced ?? 0n;
+				const total = state.syncProgress?.total ?? 1_000n;
+				return total - synced < 100n;
+			}),
+			Rx.map((s) => s.balances[nativeToken()] ?? 0n),
+			Rx.filter((balance) => balance > 0n),
+		),
+	);
 
 /* **********************************************************************
  * buildWalletAndWaitForFunds: the main function that creates a wallet
@@ -273,48 +337,60 @@ const waitForFunds = (wallet: Wallet, logger: Logger) =>
  */
 
 const buildWalletAndWaitForFunds = async (
-  { indexer, indexerWS, node, proofServer }: Config,
-  logger: Logger,
-  seed: string,
+	{ indexer, indexerWS, node, proofServer }: Config,
+	logger: Logger,
+	seed: string,
 ): Promise<Wallet & Resource> => {
-  const wallet = await WalletBuilder.buildFromSeed(
-    indexer,
-    indexerWS,
-    proofServer,
-    node,
-    seed,
-    getZswapNetworkId(),
-    'warn',
-  );
-  wallet.start();
-  const state = await Rx.firstValueFrom(wallet.state());
-  logger.info(`Your wallet seed is: ${seed}`);
-  logger.info(`Your wallet address is: ${state.address}`);
-  let balance = state.balances[nativeToken()];
-  if (balance === undefined || balance === 0n) {
-    logger.info(`Your wallet balance is: 0`);
-    logger.info(`Waiting to receive tokens...`);
-    balance = await waitForFunds(wallet, logger);
-  }
-  logger.info(`Your wallet balance is: ${balance}`);
-  return wallet;
+	const wallet = await WalletBuilder.buildFromSeed(
+		indexer,
+		indexerWS,
+		proofServer,
+		node,
+		seed,
+		getZswapNetworkId(),
+		"warn",
+	);
+	wallet.start();
+	const state = await Rx.firstValueFrom(wallet.state());
+	logger.info(`Your wallet seed is: ${seed}`);
+	logger.info(`Your wallet address is: ${state.address}`);
+	let balance = state.balances[nativeToken()];
+	if (balance === undefined || balance === 0n) {
+		logger.info(`Your wallet balance is: 0`);
+		logger.info(`Waiting to receive tokens...`);
+		balance = await waitForFunds(wallet, logger);
+	}
+	logger.info(`Your wallet balance is: ${balance}`);
+	return wallet;
 };
 
 // Generate a random see and create the wallet with that.
-const buildFreshWallet = async (config: Config, logger: Logger): Promise<Wallet & Resource> =>
-  await buildWalletAndWaitForFunds(config, logger, toHex(utils.randomBytes(32)));
+const buildFreshWallet = async (
+	config: Config,
+	logger: Logger,
+): Promise<Wallet & Resource> =>
+	await buildWalletAndWaitForFunds(
+		config,
+		logger,
+		toHex(utils.randomBytes(32)),
+	);
 
 // Prompt for a seed and create the wallet with that.
-const buildWalletFromSeed = async (config: Config, rli: Interface, logger: Logger): Promise<Wallet & Resource> => {
-  const seed = await rli.question('Enter your wallet seed: ');
-  return await buildWalletAndWaitForFunds(config, logger, seed);
+const buildWalletFromSeed = async (
+	config: Config,
+	rli: Interface,
+	logger: Logger,
+): Promise<Wallet & Resource> => {
+	const seed = await rli.question("Enter your wallet seed: ");
+	return await buildWalletAndWaitForFunds(config, logger, seed);
 };
 
 /* ***********************************************************************
  * This seed gives access to tokens minted in the genesis block of a local development node - only
  * used in standalone networks to build a wallet with initial funds.
  */
-const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
+const GENESIS_MINT_WALLET_SEED =
+	"0000000000000000000000000000000000000000000000000000000000000001";
 
 /* **********************************************************************
  * buildWallet: unless running in a standalone (offline) mode,
@@ -329,33 +405,45 @@ You can do one of the following:
   3. Exit
 Which would you like to do? `;
 
-const buildWallet = async (config: Config, rli: Interface, logger: Logger): Promise<(Wallet & Resource) | null> => {
-  if (config instanceof StandaloneConfig) {
-    return await buildWalletAndWaitForFunds(config, logger, GENESIS_MINT_WALLET_SEED);
-  }
-  while (true) {
-    const choice = await rli.question(WALLET_LOOP_QUESTION);
-    switch (choice) {
-      case '1':
-        return await buildFreshWallet(config, logger);
-      case '2':
-        return await buildWalletFromSeed(config, rli, logger);
-      case '3':
-        logger.info('Exiting...');
-        return null;
-      default:
-        logger.error(`Invalid choice: ${choice}`);
-    }
-  }
+const buildWallet = async (
+	config: Config,
+	rli: Interface,
+	logger: Logger,
+): Promise<(Wallet & Resource) | null> => {
+	if (config instanceof StandaloneConfig) {
+		return await buildWalletAndWaitForFunds(
+			config,
+			logger,
+			GENESIS_MINT_WALLET_SEED,
+		);
+	}
+	while (true) {
+		const choice = await rli.question(WALLET_LOOP_QUESTION);
+		switch (choice) {
+			case "1":
+				return await buildFreshWallet(config, logger);
+			case "2":
+				return await buildWalletFromSeed(config, rli, logger);
+			case "3":
+				logger.info("Exiting...");
+				return null;
+			default:
+				logger.error(`Invalid choice: ${choice}`);
+		}
+	}
 };
 
-const mapContainerPort = (env: StartedDockerComposeEnvironment, url: string, containerName: string) => {
-  const mappedUrl = new URL(url);
-  const container = env.getContainer(containerName);
+const mapContainerPort = (
+	env: StartedDockerComposeEnvironment,
+	url: string,
+	containerName: string,
+) => {
+	const mappedUrl = new URL(url);
+	const container = env.getContainer(containerName);
 
-  mappedUrl.port = String(container.getFirstMappedPort());
+	mappedUrl.port = String(container.getFirstMappedPort());
 
-  return mappedUrl.toString().replace(/\/+$/, '');
+	return mappedUrl.toString().replace(/\/+$/, "");
 };
 
 /* **********************************************************************
@@ -365,64 +453,81 @@ const mapContainerPort = (env: StartedDockerComposeEnvironment, url: string, con
  * will wait for Docker to be ready before doing anything else.
  */
 
-export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComposeEnvironment): Promise<void> => {
-  const rli = createInterface({ input, output, terminal: true });
-  let env;
-  if (dockerEnv !== undefined) {
-    env = await dockerEnv.up();
+export const run = async (
+	config: Config,
+	logger: Logger,
+	dockerEnv?: DockerComposeEnvironment,
+): Promise<void> => {
+	const rli = createInterface({ input, output, terminal: true });
+	let env;
+	if (dockerEnv !== undefined) {
+		env = await dockerEnv.up();
 
-    if (config instanceof StandaloneConfig) {
-      config.indexer = mapContainerPort(env, config.indexer, 'record-indexer');
-      config.indexerWS = mapContainerPort(env, config.indexerWS, 'record-indexer');
-      config.node = mapContainerPort(env, config.node, 'record-node');
-      config.proofServer = mapContainerPort(env, config.proofServer, 'record-proof-server');
-    }
-  }
-  const wallet = await buildWallet(config, rli, logger);
-  try {
-    if (wallet !== null) {
-      const walletAndMidnightProvider = await createWalletAndMidnightProvider(wallet);
-      const providers = {
-        privateStateProvider: levelPrivateStateProvider<PrivateStates>({
-          privateStateStoreName: config.privateStateStoreName,
-        }),
-        publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
-        zkConfigProvider: new NodeZkConfigProvider<'add_patient_and_record' | 'update_record' | 'delete_record'>(config.zkConfigPath),
-        proofProvider: httpClientProofProvider(config.proofServer),
-        walletProvider: walletAndMidnightProvider,
-        midnightProvider: walletAndMidnightProvider,
-      };
-      await mainLoop(providers, rli, logger);
-    }
-  } catch (e) {
-    if (e instanceof Error) {
-      logger.error(`Found error '${e.message}'`);
-      logger.info('Exiting...');
-      logger.debug(`${e.stack}`);
-    } else {
-      throw e;
-    }
-  } finally {
-    try {
-      rli.close();
-      rli.removeAllListeners();
-    } catch (e) {
-    } finally {
-      try {
-        if (wallet !== null) {
-          await wallet.close();
-        }
-      } catch (e) {
-      } finally {
-        try {
-          if (env !== undefined) {
-            await env.down();
-            logger.info('Goodbye');
-            process.exit(0);
-          }
-        } catch (e) {}
-      }
-    }
-  }
+		if (config instanceof StandaloneConfig) {
+			config.indexer = mapContainerPort(env, config.indexer, "record-indexer");
+			config.indexerWS = mapContainerPort(
+				env,
+				config.indexerWS,
+				"record-indexer",
+			);
+			config.node = mapContainerPort(env, config.node, "record-node");
+			config.proofServer = mapContainerPort(
+				env,
+				config.proofServer,
+				"record-proof-server",
+			);
+		}
+	}
+	const wallet = await buildWallet(config, rli, logger);
+	try {
+		if (wallet !== null) {
+			const walletAndMidnightProvider =
+				await createWalletAndMidnightProvider(wallet);
+			const providers = {
+				privateStateProvider: levelPrivateStateProvider<PrivateStates>({
+					privateStateStoreName: config.privateStateStoreName,
+				}),
+				publicDataProvider: indexerPublicDataProvider(
+					config.indexer,
+					config.indexerWS,
+				),
+				zkConfigProvider: new NodeZkConfigProvider<
+					"add_patient_and_record" | "update_record" | "delete_record"
+				>(config.zkConfigPath),
+				proofProvider: httpClientProofProvider(config.proofServer),
+				walletProvider: walletAndMidnightProvider,
+				midnightProvider: walletAndMidnightProvider,
+			};
+			await mainLoop(providers, rli, logger);
+		}
+	} catch (e) {
+		if (e instanceof Error) {
+			logger.error(`Found error '${e.message}'`);
+			logger.info("Exiting...");
+			logger.debug(`${e.stack}`);
+		} else {
+			throw e;
+		}
+	} finally {
+		try {
+			rli.close();
+			rli.removeAllListeners();
+		} catch (e) {
+		} finally {
+			try {
+				if (wallet !== null) {
+					await wallet.close();
+				}
+			} catch (e) {
+			} finally {
+				try {
+					if (env !== undefined) {
+						await env.down();
+						logger.info("Goodbye");
+						process.exit(0);
+					}
+				} catch (e) { }
+			}
+		}
+	}
 };
-
