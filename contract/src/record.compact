@@ -3,40 +3,43 @@ import CompactStandardLibrary;
 export enum STATE { empty, filed}
 
 export ledger state : STATE;
-export ledger record_hash: Maybe<Bytes<32>>;
-export ledger patient_id  : Bytes<32>;
+export ledger record_hash: Maybe<Opaque<"Uint8Array">>;
+export ledger patient_id  : Opaque<"Uint8Array">;
 
 constructor() {
-    record_hash = none<Bytes<32>>();
+    record_hash = none<Opaque<"Uint8Array">>();
     state = STATE.empty;
     // doctorPermissions = none<Map<Bytes<32>, String>>(); // Removed as it's not declared as ledger
 }
 
-witness patient_secret_key() : Bytes<32>;
+witness patient_secret_key() : Opaque<"Uint8Array">;
 
-export circuit add_patient_and_record(new_record_hash: Bytes<32>, patient_id : Bytes<32>): [] {
+export circuit add_patient_and_record(new_record_hash: Opaque<"Uint8Array"> ): [] {
     assert state == STATE.empty
         "Attempted to add record to an already existing record, use update_record instead";
-    record_hash = some<Bytes<32>>(new_record_hash);
+    record_hash = some<Opaque<"Uint8Array">>(new_record_hash);
     state = STATE.filed;
-    patient_id = disclose(public_key(patient_secret_key(), new_record_hash as Field as Bytes<32>));
+	patient_id = disclose(public_key(patient_secret_key(), new_record_hash));
+
 }
 
-export circuit update_record(new_record_hash : Bytes<32>): [] {
+export circuit update_record(new_record_hash :Opaque<"Uint8Array">): [] {
     assert state == STATE.filed
         "Attempted to add record to an non-existing record, use add_record instead";
-    record_hash = some<Bytes<32>>(new_record_hash);
+	assert patient_id == public_key(patient_secret_key(), new_record_hash)
+    "Attempted to take down post, but not the current patient id";
+
+    record_hash = some<Opaque<"Uint8Array">>(new_record_hash);
 }
 
 export circuit delete_record(): [] {
     assert state == STATE.filed
         "Attempted to delete record a non-existing record";
-    record_hash = none<Bytes<32>>();
+    record_hash = none<Opaque<"Uint8Array">>();
     state = STATE.empty;
 }
-
-export circuit public_key(sk: Bytes<32>, data: Bytes<32>): Bytes<32> {
+export circuit public_key(sk: Opaque<"Uint8Array">, data: Opaque<"Uint8Array">): Opaque<"Uint8Array">{
     return persistent_hash<Vector<3, Bytes<32>>>([pad(32, "record:pk:"),
-                                                  data,
-                                                  sk]);
+                                                  hash(data),
+                                                  hash(sk)]) as Opaque<"Uint8Array">;
 }
