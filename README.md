@@ -1,5 +1,6 @@
 # DUZK
 Healthcare-focused security with Midnight and Pinata
+**WINNNER!!!! - Midnight Track**
 
 ### About
 Patients' medical data have suffered from security flaws for years, and DUZK aims to make it as painless as possible to switch to a more secure solution.
